@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const root=path.join(__dirname,'..'),load=p=>JSON.parse(fs.readFileSync(path.join(root,p),'utf8'));
+const safe=x=>JSON.stringify(x).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+const lib=load('assets/design-library.json'),evidence=load('assets/evidence-library.json');
+const {composeReport,catalog}=require('./compose-report.cjs');
+const template=fs.readFileSync(path.join(root,'assets/design-atlas-template.html'),'utf8');
+const html=template.replace('/* LIBRARY_DATA */',()=>`const LIB=${safe(lib)},EVIDENCE=${safe(evidence)},REPORT_CATALOG=${safe(catalog)};const catalog=REPORT_CATALOG;${composeReport.toString()}`);
+const script=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)][0][1];new vm.Script(script);
+const dest=path.join(root,'demo/design-atlas.html');fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest,html);
+console.log(`Built ${dest}: ${lib.charts.length} chart patterns, ${lib.palettes.length} palettes.`);

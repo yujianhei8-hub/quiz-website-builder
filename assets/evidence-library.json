@@ -1,0 +1,38 @@
+{
+  "version":"1.1.0",
+  "topic":"weekend-demo",
+  "status":"original-exploration-not-validated",
+  "note":"这是资料库结构示例，不是周末偏好的科学文献库。官方来源只支持相应UI方法，周末分类与权重均是原创设计假设。",
+  "sources":[
+    {"id":"S-WCAG-COLOR","type":"official-guidance","title":"W3C Understanding Use of Color","url":"https://www.w3.org/WAI/WCAG22/Understanding/use-of-color","retrievedAt":"2026-11-01","access":"fulltext","locator":"Success Criterion and Intent","purpose":"ui","population":"web users","rights":{"mode":"link-only","license":null},"status":"reviewed"},
+    {"id":"S-WCAG-CONTRAST","type":"official-guidance","title":"W3C Understanding Contrast Minimum","url":"https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html","retrievedAt":"2026-11-01","access":"fulltext","locator":"Success Criterion","purpose":"ui","population":"web users","rights":{"mode":"link-only","license":null},"status":"reviewed"}
+  ],
+  "claims":[
+    {"id":"C-PREF","origin":"design-hypothesis","summary":"用三种周末选择作为原创探索方向，情境回答可作为推荐线索。没有主张人格测量效度。","sourceIds":[],"uses":["construct","question","score","outcome","action"],"limitations":"题目、权重和分类尚未经人群验证。"},
+    {"id":"C-COLOR","origin":"official-fact","summary":"界面应以文字或形状补充颜色编码。","sourceIds":["S-WCAG-COLOR"],"uses":["ui"],"limitations":"这不是完整可访问性认证。"},
+    {"id":"C-CONTRAST","origin":"official-fact","summary":"可读文字需满足相应对比度要求，本项目统一检查主要文字对至少4.5:1。","sourceIds":["S-WCAG-CONTRAST"],"uses":["ui"],"limitations":"图形、焦点与完整组件仍需另外检查。"}
+  ],
+  "constructs":[
+    {"id":"quiet","label":"安静与自主节奏偏好","claimIds":["C-PREF"]},
+    {"id":"city","label":"外出换景偏好","claimIds":["C-PREF"]},
+    {"id":"make","label":"动手过程偏好","claimIds":["C-PREF"]}
+  ],
+  "questions":[
+    {"id":"q1","constructIds":["quiet","city","make"],"claimIds":["C-PREF"]},
+    {"id":"q2","constructIds":["quiet","city","make"],"claimIds":["C-PREF"]},
+    {"id":"q3","constructIds":["quiet","city","make"],"claimIds":["C-PREF"]},
+    {"id":"q4","constructIds":["quiet","city","make"],"claimIds":["C-PREF"]},
+    {"id":"q5","constructIds":["quiet","city","make"],"claimIds":["C-PREF"]},
+    {"id":"q6","constructIds":["quiet","city","make"],"claimIds":["C-PREF"]},
+    {"id":"q7","constructIds":["quiet","city","make"],"claimIds":["C-PREF"]},
+    {"id":"q8","constructIds":["quiet","city","make"],"claimIds":["C-PREF"]},
+    {"id":"q9","constructIds":["quiet","city","make"],"claimIds":["C-PREF"]}
+  ],
+  "scoring":[{"id":"score-v1","claimIds":["C-PREF"],"formula":"100 * selectedPoints / maximumAvailablePointsPerResult","kind":"original-rule","validated":false}],
+  "outcomes":[
+    {"id":"quiet","claimIds":["C-PREF"],"scoreId":"score-v1","sections":["summary","reasons","caution","actions"],"chartIds":["bar"]},
+    {"id":"city","claimIds":["C-PREF"],"scoreId":"score-v1","sections":["summary","reasons","caution","actions"],"chartIds":["bar"]},
+    {"id":"make","claimIds":["C-PREF"],"scoreId":"score-v1","sections":["summary","reasons","caution","actions"],"chartIds":["bar"]}
+  ],
+  "metrics":[{"id":"preference-index","origin":"original-rule","unit":"index-percent","bounds":[0,100],"denominator":"sum of per-question maximum points for each outcome","population":"this user's selected answers only","timeScope":"current session","missing":"do not score until complete","transform":"normalize independently for each outcome; not a probability distribution","chartId":"bar","accessibleSummary":"各方向独立的规则偏好指数，不是人群排名或成功概率。"}]
+}

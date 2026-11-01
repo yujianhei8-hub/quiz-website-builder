@@ -1,0 +1,15 @@
+{
+  "version":"1.2.0",
+  "projectId":"new-quiz",
+  "topic":"",
+  "phase":"direction",
+  "delegation":null,
+  "research":{"keywordFamilies":[],"searchLog":[],"sourceIds":[],"status":"not-started","limitations":[]},
+  "proposal":{"revision":0,"artifact":null,"reportRecipe":null},
+  "prototype":{"revision":0,"artifact":null},
+  "approvals":{"proposal":null,"prototype":null},
+  "feedback":[],
+  "audit":{"status":"not-started","unresolved":[]},
+  "delivery":null,
+  "history":[]
+}

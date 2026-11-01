@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>我的第一个测试网站</title>
+<style>
+:root{--ink:#172332;--blue:#325ce7;--bg:#f5f6fa;--muted:#607084}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 system-ui,'Microsoft YaHei',sans-serif}main{max-width:760px;margin:48px auto;padding:0 20px}h1{font-size:clamp(29px,6vw,44px);line-height:1.3;margin:20px 0}h2{line-height:1.4}.tag{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--blue)}.panel{background:white;padding:clamp(24px,5vw,44px);border:1px solid #dce2ec;border-radius:22px;margin:18px 0}.muted{color:var(--muted)}button{font:inherit;cursor:pointer;border:1px solid #cdd6e6;border-radius:12px;background:white;color:var(--ink);padding:12px 18px;min-height:48px}.primary{background:var(--blue);color:white;border-color:var(--blue);font-weight:700}button:focus-visible{outline:3px solid #f4a95c;outline-offset:3px}button:disabled{opacity:.4;cursor:default}.options{display:grid;gap:12px;margin:26px 0}.option{text-align:left;padding:17px 20px;display:flex;align-items:flex-start;gap:14px}.letter{font-weight:700;color:var(--blue)}.option[aria-pressed=true]{background:#eef2ff;border-color:var(--blue)}progress{width:100%;height:9px;accent-color:var(--blue)}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}.score{font-size:24px;color:var(--blue);font-weight:800}.result{border-top:1px solid #e3e7ef;padding-top:22px;margin-top:26px}ul,ol{padding-left:24px}.notice{font-size:13px;color:var(--muted);margin-top:28px}.hidden{display:none!important}@media(max-width:420px){main{margin:22px auto;padding:0 14px}.panel{padding:23px 19px}.option{padding:14px 13px}}@media print{button,.actions{display:none}.panel{border:0}main{margin:0}}
+</style></head><body><main>
+<section id="intro" class="panel"><div class="tag">QUICK EXPLORATION</div><h1 id="title"></h1><p id="introText" class="muted"></p><button id="start" class="primary">开始测试 →</button><p class="notice">无需注册。页面不上传答案；关闭后请保存报告。这个小测试用于偏好探索。</p></section>
+<section id="quiz" class="panel hidden" aria-labelledby="questionTitle"><div id="position" class="tag"></div><progress id="progress" max="1" value="0" aria-label="答题进度"></progress><h1 id="questionTitle" tabindex="-1"></h1><p class="muted">选最接近的一项，点击后进入下一题。</p><div id="options" class="options"></div><button id="back">← 上一题</button></section>
+<section id="result" class="panel hidden"><div class="tag">YOUR EXPLORATION</div><h1 id="resultTitle" tabindex="-1"></h1><p class="muted">下面的解释来自你本次选择；几个方向接近，也可以并存。</p><figure style="margin:24px 0"><figcaption>各方向的本次偏好指数</figcaption><div id="resultChart"></div><p class="notice">共同刻度 0–100；具体数值和解释见下方各方向。</p></figure><div id="results"></div><p class="notice">指数仅表示本规则下的偏好程度，不是诊断、准确率或未来概率。各方向独立计算，不需要相加等于 100%。</p><div class="actions"><button id="download" class="primary">下载报告 TXT</button><button id="edit">返回修改答案</button><button id="restart">重新开始</button></div></section>
+<noscript>请启用 JavaScript，或在支持脚本的浏览器中打开。</noscript></main>
+<script>
+'use strict';
+/* QUIZ_CORE */
+/* QUIZ_DATA */
+validate(DATA);
+for(const [key,value] of Object.entries({'--ink':UI_THEME.text,'--blue':UI_THEME.primary,'--bg':UI_THEME.bg,'--muted':UI_THEME.muted,'--surface':UI_THEME.surface,'--on-primary':UI_THEME.onPrimary})){document.documentElement.style.setProperty(key,value);}
+const themeStyle=document.createElement('style');themeStyle.textContent='.panel,button{background:var(--surface)}button{color:var(--ink)}.primary{background:var(--blue);color:var(--on-primary)}.option[aria-pressed=true]{background:var(--surface);border-width:2px}';document.head.append(themeStyle);
+const $=id=>document.getElementById(id);let answers=Array(DATA.questions.length).fill(null),current=0,advancing=false,timer=null;
+document.title=DATA.title;$('title').textContent=DATA.title;$('introText').textContent=DATA.intro||'';
+function show(id){for(const name of ['intro','quiz','result'])$(name).classList.toggle('hidden',name!==id);}
+function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
+function renderQuestion(){
+ advancing=false;clearTimeout(timer);const q=DATA.questions[current];show('quiz');$('position').textContent=`第 ${current+1} / ${DATA.questions.length} 题`;$('progress').max=DATA.questions.length;$('progress').value=current;$('questionTitle').textContent=q.text;$('back').disabled=current===0;$('options').replaceChildren();
+ q.options.forEach((o,i)=>{const b=element('button',undefined,'option');b.type='button';b.setAttribute('aria-pressed',String(answers[current]===i));b.append(element('span',String.fromCharCode(65+i),'letter'),element('span',o.text));b.addEventListener('click',()=>choose(i));$('options').append(b);});
+ $('questionTitle').focus();window.scrollTo({top:0,behavior:'instant'});
+}
+function choose(i){
+ if(advancing)return;advancing=true;answers[current]=i;for(const [j,b]of [...$('options').children].entries()){b.setAttribute('aria-pressed',String(j===i));b.disabled=true;}
+ timer=setTimeout(()=>{if(current<DATA.questions.length-1){current++;renderQuestion();}else renderResult();},230);
+}
+function renderScoreChart(ranked){
+ const ns='http://www.w3.org/2000/svg',make=(tag,attrs,text)=>{const e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));if(text!==undefined)e.textContent=text;return e;};
+ const height=ranked.length*70+40,svg=make('svg',{viewBox:`0 0 500 ${height}`,role:'img','aria-label':ranked.map(r=>`${r.name} ${Math.round(r.index)} ${DATA.scoreLabel||'规则指数'}`).join('；')});svg.style.cssText='display:block;width:100%;height:auto';
+ const chart=DATA.ui?.chart||'bar';ranked.forEach((r,i)=>{const y=32+i*70,end=130+r.index*2.9,label=r.name.length>5?r.name.slice(0,4)+'…':r.name;svg.append(make('text',{x:0,y:y+8,fill:'var(--ink)','font-size':24},label),make('line',{x1:130,y1:y,x2:420,y2:y,stroke:'var(--muted)','stroke-opacity':.25}));if(chart==='bar')svg.append(make('rect',{x:130,y:y-12,width:r.index*2.9,height:24,rx:4,fill:'var(--blue)'}));if(chart==='lollipop')svg.append(make('line',{x1:130,y1:y,x2:end,y2:y,stroke:'var(--blue)','stroke-width':4}));if(chart!=='bar')svg.append(make('circle',{cx:end,cy:y,r:6,fill:'var(--blue)'}));svg.append(make('text',{x:495,y:y+8,'text-anchor':'end',fill:'var(--ink)','font-size':24},`${Math.round(r.index)}%`));});
+ svg.append(make('text',{x:130,y:height-7,fill:'var(--muted)','font-size':20},'0'),make('text',{x:420,y:height-7,'text-anchor':'end',fill:'var(--muted)','font-size':20},'100'));$('resultChart').replaceChildren(svg);
+}
+function renderResult(){
+ if(answers.some(a=>a===null)){current=answers.findIndex(a=>a===null);renderQuestion();return;}
+ clearTimeout(timer);advancing=false;const model=score(DATA,answers);show('result');$('resultTitle').textContent=model.leaders.length>1?`你有并列倾向：${model.leaders.map(r=>r.name).join(' / ')}`:`你的主要方向：${model.leaders[0].name}`;$('results').replaceChildren();renderScoreChart(model.ranked);
+ model.ranked.forEach(r=>{const s=element('article',undefined,'result');s.append(element('h2',r.name),element('div',`${Math.round(r.index)}% ${DATA.scoreLabel||'规则指数'}`,'score'),element('p',r.definition),element('strong','回答中的线索'));const ul=element('ul');r.reasons.forEach(t=>ul.append(element('li',t)));s.append(ul,element('p','留意：'+r.caution),element('strong','可以从这里开始'));const ol=element('ol');r.actions.forEach(t=>ol.append(element('li',t)));s.append(ol);$('results').append(s);});
+ $('resultTitle').focus();window.scrollTo({top:0,behavior:'instant'});
+}
+$('start').addEventListener('click',()=>{current=0;renderQuestion();});
+$('back').addEventListener('click',()=>{if(current>0){clearTimeout(timer);current--;renderQuestion();}});
+$('edit').addEventListener('click',()=>{current=DATA.questions.length-1;renderQuestion();});
+$('restart').addEventListener('click',()=>{if(confirm('清空本次答案，重新开始？')){answers=Array(DATA.questions.length).fill(null);current=0;renderQuestion();}});
+$('download').addEventListener('click',()=>{const blob=new Blob([report(DATA,answers)],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='我的探索报告.txt';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+</script></body></html>

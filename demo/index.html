@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>我的第一个测试网站</title>
+<style>
+:root{--ink:#172332;--blue:#325ce7;--bg:#f5f6fa;--muted:#607084}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 system-ui,'Microsoft YaHei',sans-serif}main{max-width:760px;margin:48px auto;padding:0 20px}h1{font-size:clamp(29px,6vw,44px);line-height:1.3;margin:20px 0}h2{line-height:1.4}.tag{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--blue)}.panel{background:white;padding:clamp(24px,5vw,44px);border:1px solid #dce2ec;border-radius:22px;margin:18px 0}.muted{color:var(--muted)}button{font:inherit;cursor:pointer;border:1px solid #cdd6e6;border-radius:12px;background:white;color:var(--ink);padding:12px 18px;min-height:48px}.primary{background:var(--blue);color:white;border-color:var(--blue);font-weight:700}button:focus-visible{outline:3px solid #f4a95c;outline-offset:3px}button:disabled{opacity:.4;cursor:default}.options{display:grid;gap:12px;margin:26px 0}.option{text-align:left;padding:17px 20px;display:flex;align-items:flex-start;gap:14px}.letter{font-weight:700;color:var(--blue)}.option[aria-pressed=true]{background:#eef2ff;border-color:var(--blue)}progress{width:100%;height:9px;accent-color:var(--blue)}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}.score{font-size:24px;color:var(--blue);font-weight:800}.result{border-top:1px solid #e3e7ef;padding-top:22px;margin-top:26px}ul,ol{padding-left:24px}.notice{font-size:13px;color:var(--muted);margin-top:28px}.hidden{display:none!important}@media(max-width:420px){main{margin:22px auto;padding:0 14px}.panel{padding:23px 19px}.option{padding:14px 13px}}@media print{button,.actions{display:none}.panel{border:0}main{margin:0}}
+</style></head><body><main>
+<section id="intro" class="panel"><div class="tag">QUICK EXPLORATION</div><h1 id="title"></h1><p id="introText" class="muted"></p><button id="start" class="primary">开始测试 →</button><p class="notice">无需注册。页面不上传答案；关闭后请保存报告。这个小测试用于偏好探索。</p></section>
+<section id="quiz" class="panel hidden" aria-labelledby="questionTitle"><div id="position" class="tag"></div><progress id="progress" max="1" value="0" aria-label="答题进度"></progress><h1 id="questionTitle" tabindex="-1"></h1><p class="muted">选最接近的一项，点击后进入下一题。</p><div id="options" class="options"></div><button id="back">← 上一题</button></section>
+<section id="result" class="panel hidden"><div class="tag">YOUR EXPLORATION</div><h1 id="resultTitle" tabindex="-1"></h1><p class="muted">下面的解释来自你本次选择；几个方向接近，也可以并存。</p><figure style="margin:24px 0"><figcaption>各方向的本次偏好指数</figcaption><div id="resultChart"></div><p class="notice">共同刻度 0–100；具体数值和解释见下方各方向。</p></figure><div id="results"></div><p class="notice">指数仅表示本规则下的偏好程度，不是诊断、准确率或未来概率。各方向独立计算，不需要相加等于 100%。</p><div class="actions"><button id="download" class="primary">下载报告 TXT</button><button id="edit">返回修改答案</button><button id="restart">重新开始</button></div></section>
+<noscript>请启用 JavaScript，或在支持脚本的浏览器中打开。</noscript></main>
+<script>
+'use strict';
+'use strict';
+function validate(data) {
+  const fail = m => { throw new Error(m); };
+  if (!data || typeof data.title !== 'string' || !data.title.trim()) fail('title must be nonempty');
+  if (!Array.isArray(data.results) || data.results.length < 2) fail('at least two results required');
+  if(data.ui?.chart&&!['bar','dot','lollipop'].includes(data.ui.chart))fail('Starter renders bar/dot/lollipop; use the atlas to implement other suitable charts');
+  const ids = data.results.map(r => r.id);
+  if (new Set(ids).size !== ids.length || ids.some(id => !/^[a-z][a-z0-9-]*$/.test(id))) fail('unique lowercase result ids required');
+  for (const r of data.results) if (![r.name,r.definition,r.caution].every(x=>typeof x==='string'&&x.trim()) || !Array.isArray(r.actions) || r.actions.length<1 || r.actions.some(x=>typeof x!=='string'||!x.trim())) fail(`incomplete result ${r.id}`);
+  if (!Array.isArray(data.questions) || data.questions.length<1 || data.questions.length>40) fail('1..40 questions required');
+  if (new Set(data.questions.map(q=>q.id)).size!==data.questions.length) fail('duplicate question id');
+  for (const q of data.questions) {
+    if (typeof q.id!=='string'||!q.id.trim()||typeof q.text!=='string'||!q.text.trim()) fail('question id/text required');
+    if (!Array.isArray(q.options)||q.options.length<2||q.options.length>6) fail(`2..6 options required: ${q.id}`);
+    for (const o of q.options) {
+      if (typeof o.text!=='string'||!o.text.trim()||typeof o.reason!=='string'||!o.reason.trim()) fail(`option text/reason required: ${q.id}`);
+      if (!o.scores || typeof o.scores!=='object' || Array.isArray(o.scores)||!Object.keys(o.scores).length) fail(`scores missing: ${q.id}`);
+      for(const [id,v] of Object.entries(o.scores)) if(!ids.includes(id)||!Number.isFinite(v)||v<0||v>5) fail(`invalid score ${q.id}/${id}`);
+      if (!Object.values(o.scores).some(x=>x>0)) fail(`option has no effect: ${q.id}`);
+    }
+  }
+  for(const id of ids) if(data.questions.reduce((s,q)=>s+Math.max(...q.options.map(o=>o.scores[id]||0)),0)<=0) fail(`unreachable scoring denominator: ${id}`);
+  return data;
+}
+function score(data,answers) {
+  if (!Array.isArray(answers)||answers.length!==data.questions.length||data.questions.some((q,i)=>!Number.isInteger(answers[i])||!q.options[answers[i]])) throw new Error('complete valid answers required');
+  const ranked=data.results.map(r=>{
+    let total=0,max=0;const reasons=[];
+    data.questions.forEach((q,i)=>{const o=q.options[answers[i]],v=o.scores[r.id]||0;total+=v;max+=Math.max(...q.options.map(x=>x.scores[r.id]||0));if(v>0)reasons.push(o.reason);});
+    return {...r,total,max,index:100*total/max,reasons:reasons.length?[...new Set(reasons)].slice(0,3):['本次选择较少支持这个方向，它可以作为对照，而非优先安排。']};
+  }).sort((a,b)=>b.index-a.index);
+  return {ranked,leaders:ranked.filter(r=>Math.abs(r.index-ranked[0].index)<1e-9)};
+}
+function report(data,answers){
+  const {ranked,leaders}=score(data,answers);
+  return `${data.title}\n\n主要方向：${leaders.map(r=>r.name).join(' / ')}${leaders.length>1?'（并列）':''}\n\n`+ranked.map(r=>`${r.name} · ${Math.round(r.index)}% ${data.scoreLabel||'规则指数'}\n${r.definition}\n回答中的线索：\n${r.reasons.map(x=>'• '+x).join('\n')}\n留意：${r.caution}\n建议：\n${r.actions.map((x,i)=>`${i+1}. ${x}`).join('\n')}`).join('\n\n')+'\n\n指数仅表示本规则下的偏好程度，不是诊断或概率。';
+}
+
+
+const DATA={"title":"你的周末，更适合怎样充电？","intro":"用 9 个小情境，找一条这周就能尝试的休息路线。约 3 分钟。","scoreLabel":"偏好指数","ui":{"palette":"editorial","chart":"bar"},"results":[{"id":"quiet","name":"留白充电","definition":"安静、低刺激和自主节奏，比较容易让你恢复。","caution":"如果休息后仍觉得隔绝或空落，加入一次轻量联系可能更舒服。","actions":["给自己留出一小时不被打断的时间。","挑一件无须产出的安静活动。","结束后比较自己是恢复了，还是更疲惫了。"]},{"id":"city","name":"换景探索","definition":"新环境和小发现，更容易给你带来新鲜感。","caution":"出行安排太满也会变成任务，记得给交通与体力留余量。","actions":["选一个近处没去过的地方。","只定一个目的地，留一段随意走走的时间。","用可承受的小预算完成一次探索。"]},{"id":"make","name":"动手沉浸","definition":"亲手做出一点东西，容易让你专注并获得满足。","caution":"追求成品和比较作品，可能把休息变成考核。","actions":["选一个一小时内能收尾的小任务。","先用已有工具和材料。","允许作品不完美，观察你是否享受制作过程。"]}],"questions":[{"id":"q1","text":"周六下午突然空出来，你最想？","options":[{"text":"在家读书、听歌或发呆","scores":{"quiet":2},"reason":"你愿意为自己保留安静时间。"},{"text":"去一个没逛过的街区","scores":{"city":2},"reason":"换个环境对你有吸引力。"},{"text":"做一道菜或一个小手作","scores":{"make":2},"reason":"你会主动选择动手的过程。"}]},{"id":"q2","text":"今天没什么精力，哪种安排更舒服？","options":[{"text":"做一个熟悉的简单小东西","scores":{"make":2,"quiet":1},"reason":"熟悉的动手任务能让你慢下来。"},{"text":"取消安排，自己慢慢待着","scores":{"quiet":2},"reason":"低负荷和自主节奏对你很重要。"},{"text":"去附近公园散一小圈","scores":{"city":2},"reason":"你仍想通过温和出行切换状态。"}]},{"id":"q3","text":"朋友推荐一个周末活动，你最在意？","options":[{"text":"地方有没有新鲜之处","scores":{"city":2},"reason":"未知的小发现是你的动力。"},{"text":"能不能亲手参与","scores":{"make":2},"reason":"你喜欢真正参与而非只看成品。"},{"text":"现场是否安静、可以随时离开","scores":{"quiet":2},"reason":"刺激强度和退出自由会影响你的体验。"}]},{"id":"q4","text":"只有一小时，不想花钱，你会？","options":[{"text":"整理一个角落并做小改造","scores":{"make":2},"reason":"你能从小而具体的完成感里获得满足。"},{"text":"沿平时没走过的路散步","scores":{"city":2},"reason":"探索欲不一定需要大预算。"},{"text":"关掉通知，躺着听一张专辑","scores":{"quiet":2},"reason":"你愿意减少信息来恢复精力。"}]},{"id":"q5","text":"哪种不方便，你相对愿意接受？","options":[{"text":"暂时没有人陪伴","scores":{"quiet":2},"reason":"独处对你不一定是负担。"},{"text":"做完需要收拾材料","scores":{"make":2},"reason":"你对动手后的收尾有一定接受度。"},{"text":"要花一点时间走路找路","scores":{"city":2},"reason":"你能接受探索过程的交通成本。"}]},{"id":"q6","text":"一个活动结束后，哪种感觉让你满足？","options":[{"text":"发现了平时没注意的东西","scores":{"city":2},"reason":"你在意新鲜观察。"},{"text":"脑子终于不吵了","scores":{"quiet":2},"reason":"安静后的状态改善对你有价值。"},{"text":"做出了一个不完美但属于自己的东西","scores":{"make":2},"reason":"你看重亲手参与和自己的痕迹。"}]},{"id":"q7","text":"天气打乱计划，你更可能？","options":[{"text":"正好留在家里放空","scores":{"quiet":2},"reason":"计划留白也可能符合你的需要。"},{"text":"换成室内制作或烹饪","scores":{"make":2},"reason":"你会寻找动手的替代安排。"},{"text":"临时找个附近的室内地点看看","scores":{"city":2},"reason":"环境变化仍能吸引你。"}]},{"id":"q8","text":"做一件事没有明显成果，你会？","options":[{"text":"只要去了新地方就值得","scores":{"city":2},"reason":"探索经历本身可以是回报。"},{"text":"只要享受制作过程就可以","scores":{"make":2},"reason":"你能把过程与成品评价分开。"},{"text":"休息本来就不必交成果","scores":{"quiet":2},"reason":"你允许自己不追求产出。"}]},{"id":"q9","text":"想到下周末，哪个计划最容易真的执行？","options":[{"text":"留一个小时给一个小作品","scores":{"make":2},"reason":"小型动手计划对你有现实吸引力。"},{"text":"留一段不安排任务的时间","scores":{"quiet":2},"reason":"你愿意主动保护恢复空间。"},{"text":"选一个附近地点轻量出门","scores":{"city":2},"reason":"低门槛探索容易进入你的生活。"}]}]};const UI_THEME={"id":"editorial","name":"蓝橙编辑","bg":"#F8F6EF","surface":"#FFFFFF","text":"#17243B","muted":"#526176","primary":"#3157D5","onPrimary":"#FFFFFF","accent":"#ED795D","focus":"#17243B","series":["#3157D5","#B84A30","#176B52"]};
+validate(DATA);
+for(const [key,value] of Object.entries({'--ink':UI_THEME.text,'--blue':UI_THEME.primary,'--bg':UI_THEME.bg,'--muted':UI_THEME.muted,'--surface':UI_THEME.surface,'--on-primary':UI_THEME.onPrimary})){document.documentElement.style.setProperty(key,value);}
+const themeStyle=document.createElement('style');themeStyle.textContent='.panel,button{background:var(--surface)}button{color:var(--ink)}.primary{background:var(--blue);color:var(--on-primary)}.option[aria-pressed=true]{background:var(--surface);border-width:2px}';document.head.append(themeStyle);
+const $=id=>document.getElementById(id);let answers=Array(DATA.questions.length).fill(null),current=0,advancing=false,timer=null;
+document.title=DATA.title;$('title').textContent=DATA.title;$('introText').textContent=DATA.intro||'';
+function show(id){for(const name of ['intro','quiz','result'])$(name).classList.toggle('hidden',name!==id);}
+function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
+function renderQuestion(){
+ advancing=false;clearTimeout(timer);const q=DATA.questions[current];show('quiz');$('position').textContent=`第 ${current+1} / ${DATA.questions.length} 题`;$('progress').max=DATA.questions.length;$('progress').value=current;$('questionTitle').textContent=q.text;$('back').disabled=current===0;$('options').replaceChildren();
+ q.options.forEach((o,i)=>{const b=element('button',undefined,'option');b.type='button';b.setAttribute('aria-pressed',String(answers[current]===i));b.append(element('span',String.fromCharCode(65+i),'letter'),element('span',o.text));b.addEventListener('click',()=>choose(i));$('options').append(b);});
+ $('questionTitle').focus();window.scrollTo({top:0,behavior:'instant'});
+}
+function choose(i){
+ if(advancing)return;advancing=true;answers[current]=i;for(const [j,b]of [...$('options').children].entries()){b.setAttribute('aria-pressed',String(j===i));b.disabled=true;}
+ timer=setTimeout(()=>{if(current<DATA.questions.length-1){current++;renderQuestion();}else renderResult();},230);
+}
+function renderScoreChart(ranked){
+ const ns='http://www.w3.org/2000/svg',make=(tag,attrs,text)=>{const e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));if(text!==undefined)e.textContent=text;return e;};
+ const height=ranked.length*70+40,svg=make('svg',{viewBox:`0 0 500 ${height}`,role:'img','aria-label':ranked.map(r=>`${r.name} ${Math.round(r.index)} ${DATA.scoreLabel||'规则指数'}`).join('；')});svg.style.cssText='display:block;width:100%;height:auto';
+ const chart=DATA.ui?.chart||'bar';ranked.forEach((r,i)=>{const y=32+i*70,end=130+r.index*2.9,label=r.name.length>5?r.name.slice(0,4)+'…':r.name;svg.append(make('text',{x:0,y:y+8,fill:'var(--ink)','font-size':24},label),make('line',{x1:130,y1:y,x2:420,y2:y,stroke:'var(--muted)','stroke-opacity':.25}));if(chart==='bar')svg.append(make('rect',{x:130,y:y-12,width:r.index*2.9,height:24,rx:4,fill:'var(--blue)'}));if(chart==='lollipop')svg.append(make('line',{x1:130,y1:y,x2:end,y2:y,stroke:'var(--blue)','stroke-width':4}));if(chart!=='bar')svg.append(make('circle',{cx:end,cy:y,r:6,fill:'var(--blue)'}));svg.append(make('text',{x:495,y:y+8,'text-anchor':'end',fill:'var(--ink)','font-size':24},`${Math.round(r.index)}%`));});
+ svg.append(make('text',{x:130,y:height-7,fill:'var(--muted)','font-size':20},'0'),make('text',{x:420,y:height-7,'text-anchor':'end',fill:'var(--muted)','font-size':20},'100'));$('resultChart').replaceChildren(svg);
+}
+function renderResult(){
+ if(answers.some(a=>a===null)){current=answers.findIndex(a=>a===null);renderQuestion();return;}
+ clearTimeout(timer);advancing=false;const model=score(DATA,answers);show('result');$('resultTitle').textContent=model.leaders.length>1?`你有并列倾向：${model.leaders.map(r=>r.name).join(' / ')}`:`你的主要方向：${model.leaders[0].name}`;$('results').replaceChildren();renderScoreChart(model.ranked);
+ model.ranked.forEach(r=>{const s=element('article',undefined,'result');s.append(element('h2',r.name),element('div',`${Math.round(r.index)}% ${DATA.scoreLabel||'规则指数'}`,'score'),element('p',r.definition),element('strong','回答中的线索'));const ul=element('ul');r.reasons.forEach(t=>ul.append(element('li',t)));s.append(ul,element('p','留意：'+r.caution),element('strong','可以从这里开始'));const ol=element('ol');r.actions.forEach(t=>ol.append(element('li',t)));s.append(ol);$('results').append(s);});
+ $('resultTitle').focus();window.scrollTo({top:0,behavior:'instant'});
+}
+$('start').addEventListener('click',()=>{current=0;renderQuestion();});
+$('back').addEventListener('click',()=>{if(current>0){clearTimeout(timer);current--;renderQuestion();}});
+$('edit').addEventListener('click',()=>{current=DATA.questions.length-1;renderQuestion();});
+$('restart').addEventListener('click',()=>{if(confirm('清空本次答案，重新开始？')){answers=Array(DATA.questions.length).fill(null);current=0;renderQuestion();}});
+$('download').addEventListener('click',()=>{const blob=new Blob([report(DATA,answers)],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='我的探索报告.txt';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+</script></body></html>

@@ -1,0 +1,180 @@
+{
+  "kind": "author-proposal-not-personal-report",
+  "recipeId": "historical-match",
+  "name": "历史人物多维相似",
+  "setting": {
+    "id": "historical-person",
+    "name": "历史人物",
+    "rule": "要有独立人物档案、可定位材料、解释与反例"
+  },
+  "scoreContract": {
+    "id": "profile-similarity",
+    "meaning": "在给定维度和人物档案编码下的相似程度",
+    "formula": "100*(1-sum(weight*abs(user-profile))/sum(weight)); axes normalized to [0,1]",
+    "not": "人物真实人格真值、命定身份或客观命中率"
+  },
+  "inputInterpretation": "planned-inputs-not-verified-data",
+  "sections": [
+    {
+      "id": "answer",
+      "name": "一句话主答案",
+      "question": "这次最值得带走什么？",
+      "needs": [
+        "outcome-code"
+      ],
+      "form": "大标题+简短结论",
+      "charts": [],
+      "certainty": "rule-output",
+      "instruction": "先给有用的主要方向，再说组合或相邻可能。"
+    },
+    {
+      "id": "setting",
+      "name": "结果设定/角色",
+      "question": "用什么形象理解这个结果？",
+      "needs": [
+        "outcome-code",
+        "setting-map"
+      ],
+      "form": "形象卡+隐喻含义",
+      "charts": [],
+      "certainty": "metaphor-or-sourced-identity",
+      "fallback": "answer",
+      "instruction": "人物、动物、地点或抽象路径均可；表现层和计分层分离。"
+    },
+    {
+      "id": "similarity",
+      "name": "多维相似度",
+      "question": "与哪些人物或角色更接近？",
+      "needs": [
+        "profile-scores",
+        "profile-archive"
+      ],
+      "form": "首选+相邻人物排名",
+      "charts": [
+        "bar",
+        "dot",
+        "lollipop"
+      ],
+      "certainty": "rule-similarity-not-identity",
+      "fallback": "profile",
+      "instruction": "说明相似度的维度和含义；人物编码是有史料约束的解释，不是客观人格真值。"
+    },
+    {
+      "id": "profile",
+      "name": "多维数据画像",
+      "question": "哪些维度更突出，哪些接近？",
+      "needs": [
+        "dimension-scores"
+      ],
+      "form": "图+维度解释",
+      "charts": [
+        "bar",
+        "dot",
+        "radar"
+      ],
+      "certainty": "rule-score",
+      "fallback": "scene",
+      "instruction": "按数据选图，解释组合，不只列分。"
+    },
+    {
+      "id": "shared-differences",
+      "name": "像在哪里，不像在哪里",
+      "question": "该借鉴什么，又不应认领什么？",
+      "needs": [
+        "dimension-scores",
+        "profile-archive",
+        "scenario-answers"
+      ],
+      "form": "相似/差异矩阵+具体事例",
+      "charts": [
+        "matrix",
+        "dumbbell"
+      ],
+      "certainty": "sourced-comparison",
+      "fallback": "tensions",
+      "instruction": "不得只贴人物名字；差异、时代环境和反例都要保留。"
+    },
+    {
+      "id": "scene",
+      "name": "情境拆解",
+      "question": "这类反应通常在什么情境出现？",
+      "needs": [
+        "scenario-answers"
+      ],
+      "form": "分镜/对话/情境卡",
+      "charts": [],
+      "certainty": "answer-supported",
+      "instruction": "使用答案提供的线索；同一动作在不同动机和后果下要有不同分析。"
+    },
+    {
+      "id": "era-boundary",
+      "name": "史实/作品与情境边界",
+      "question": "人物原有环境与你有什么不同？",
+      "needs": [
+        "profile-archive"
+      ],
+      "form": "事实事例+时代/作品边界",
+      "charts": [],
+      "certainty": "source-bounded-biographical-interpretation",
+      "fallback": "contexts",
+      "instruction": "史实、研究解释、艺术形象和用户隐喻分开；不补写无来源事迹。"
+    },
+    {
+      "id": "alternatives",
+      "name": "相邻结果与备选",
+      "question": "为什么另一个结果也有吸引力？",
+      "needs": [
+        "dimension-scores"
+      ],
+      "form": "相邻选项+触发条件",
+      "charts": [
+        "bar",
+        "matrix"
+      ],
+      "certainty": "rule-comparison",
+      "fallback": "actions",
+      "instruction": "接近就显示接近，不制造唯一命中。"
+    },
+    {
+      "id": "actions",
+      "name": "改善/应用方向",
+      "question": "下一步怎样尝试更适合的选择？",
+      "needs": [
+        "outcome-code",
+        "scenario-answers"
+      ],
+      "form": "2–3个与模式对应的可调整行动",
+      "charts": [],
+      "certainty": "bounded-suggestion",
+      "instruction": "建议按情境和约束变化，不保证疗效或收益。"
+    }
+  ],
+  "adaptations": [],
+  "searchFamilies": [
+    "人物候选范围",
+    "原始史料和出处",
+    "人物行为与决策",
+    "时代和外部条件",
+    "研究分歧及反例",
+    "维度编码与缺失",
+    "相似性规则",
+    "图像/文本使用权"
+  ],
+  "seedTerms": {
+    "zh": [
+      "人物传记",
+      "史料",
+      "人物决策",
+      "史学争议",
+      "时代背景"
+    ],
+    "en": [
+      "primary historical sources",
+      "biography",
+      "historical context",
+      "historiography",
+      "counterexamples"
+    ]
+  },
+  "nextStep": "Retrieve and inspect topic sources, map questions and claims, then present this proposal for user approval before prototyping."
+}
