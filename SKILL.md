@@ -3,7 +3,7 @@ name: quiz-website-builder
 description: Turn one test direction into autonomous research, a user-approved proposal, an iterative website prototype and audited delivery. Compose topic-specific psychological exploration, historical/character similarity, animal metaphors, career, preference, decision or knowledge reports from modular sections, evidence and data-appropriate visuals. Use for quiz/test website creation and revision; never present custom scoring as validated diagnosis.
 license: MIT
 metadata:
-  version: "1.2.1"
+  version: "1.2.3"
 ---
 
 # Quiz Website Builder
@@ -22,13 +22,19 @@ Read [references/report-composition.md](references/report-composition.md) and [a
 
 For a sourced character/history profile model, `scripts/profile-match.cjs` implements the weighted normalized-distance similarity contract, explicit ties, missing-axis coverage and per-axis similarities/differences. It does not research or score historical figures for you. Build and verify the topic archive before using it; never ship synthetic demo profiles as real people.
 
+## Mobile-first delivery
+
+This workflow teaches desktop authoring: use an AI client on a computer to review proposals, build/edit files, test and publish. Do not teach mobile skill installation or mobile authoring in this tutorial. The finished quiz is primarily used on phones and also works on desktop. Design and verify narrow screens first (360/390/430 CSS px), then desktop: readable text, whole-card touch options, at least 44px touch targets, no horizontal overflow, no hover-only actions, responsive report charts/cards and non-obscuring controls. Verify the complete intro → answers → previous/change → result → save path. Distinguish actual phone/device tests from desktop viewport simulation.
+
 ## Consumer report boundary
 
 Consumer reports present results, meaningful visualizations, personalized interpretation, relevant similarities/differences, impacts and recommendations. Do not display source citations, bibliography, source links/IDs, research logs, formulas, scoring weights, methodology, evidence coverage or the author's design/reasoning process. Keep these in separate author-facing research and audit artifacts; do not merely hide them with CSS or include them in downloadable reports. Apply this boundary to visible pages and every HTML/TXT/PDF/print export. Preserve useful explanations of the user's patterns and appropriate uncertainty; removing methodology must not turn hypotheses into established causes or indices into probabilities. Essential chart labels, units and brief score meaning may remain, without exposing the calculation. Verify representative report routes and exports for leakage. This boundary does not remove materials from the author's proposal review or the teaching design atlas.
 
 ## Start with the intended result
 
-Infer supplied audience, topic, outcome, language and constraints. Ask only for missing facts that materially change the product. For a vague request, propose a reversible small prototype: 9 single-choice scenario questions and 3 outcomes. Keep the default at 9–15 questions, never exceed 30 without explicit user instruction. Preserve user requirements about wording, brand, count and interaction.
+Infer supplied audience, topic, outcome, language and constraints. Ask only for missing facts that materially change the product. Default to 15–25 questions, sized to the necessary dimensions; never exceed 30 without explicit user instruction. The bundled 9-question/3-outcome example is a small teaching demo, not a required product structure. Preserve user requirements about wording, brand, count and interaction.
+
+The 8 bundled report recipes are examples, not a closed taxonomy. Infer what the test-taker wants to understand, then propose, combine or create modules and report purposes. Each new module must specify inputs, supporting material, interpretation boundaries, visual form and missing-input behavior. When using the bundled composer/workflow helpers, extend the project-local catalog and validate its new IDs instead of silently forcing a new topic into an unsuitable existing recipe. Offer one recommended structure and at most two meaningful alternatives with a section sketch and sample paragraph for approval.
 
 The first delivery is a reviewable research/design proposal: keyword families and actual search coverage, topic boundaries, sources/rights, candidate dimensions, question directions and sample questions, scoring choices, report section wireframe, persona/animal/history-setting choice, palette and selected chart rationale, plus the exact next approval needed. Present the recommended plan first; do not overwhelm the user with every research note.
 
